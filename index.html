@@ -19,48 +19,24 @@
       top: 0;
       left: 0;
     }
-    /* Elegant heart-shaped button */
-    .heart-btn {
-      width: 100px;
-      height: 100px;
+    /* Button style for the GIF */
+    .gif-btn {
+      width: 150px;
+      height: 150px;
       position: relative;
       cursor: pointer;
-      background-color: #ff4d4d;
-      transform: rotate(-45deg);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       transition: all 0.3s ease-in-out;
     }
-    .heart-btn::before,
-    .heart-btn::after {
-      content: '';
-      position: absolute;
-      width: 100px;
-      height: 100px;
-      background-color: #ff4d4d;
-      border-radius: 50%;
-      transition: all 0.3s ease-in-out;
-    }
-    .heart-btn::before {
-      top: -50px;
-      left: 0;
-    }
-    .heart-btn::after {
-      top: 0;
-      left: 50px;
-    }
-    /* Hover effects */
-    .heart-btn:hover {
-      transform: scale(1.1) rotate(-45deg);
+    .gif-btn:hover {
+      transform: scale(1.1);
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-    }
-    .heart-btn:hover::before,
-    .heart-btn:hover::after {
-      background-color: #ff1a1a;
     }
   </style>
 </head>
 <body>
-  <div class="heart-btn" onclick="triggerFireworks()"></div> <!-- Heart-shaped button -->
+  <!-- Replaced the heart button with an image button (GIF) -->
+  <img src="firecracker.gif" alt="Heart GIF" class="gif-btn" onclick="triggerFireworks()"> <!-- GIF as button -->
 
   <script>
     let chars, particles, canvas, ctx, w, h, current;
@@ -81,10 +57,9 @@
       // Play background music only when user clicks the button
       bgMusic.play().catch(err => console.log("Background music playback failed:", err)); // Play the background music once
       
-      init();
-      resize();
-      requestAnimationFrame(render);
-      addEventListener('resize', resize);
+      init(); // Initialize the canvas and setup
+      resize(); // Resize to the current window size
+      requestAnimationFrame(render); // Start rendering
 
       // Play rocket sound only if it's not already playing
       if (rocketSound.paused) {
@@ -133,7 +108,8 @@
     }
 
     function makeChars(t) {
-      let actual = Math.floor(t / duration) % str.length;  // Get the current word based on time
+      // Initialize with the first word "HAPPY"
+      let actual = Math.floor(t / duration) % str.length;
       if (current === actual) return;
       current = actual;
 
@@ -142,10 +118,11 @@
     }
 
     function render(t) {
+      // Start the animation from the first word (HAPPY)
       makeChars(t);  // Update the characters for the current word
-      requestAnimationFrame(render);
-      ctx.fillStyle = '#00000010';
-      ctx.fillRect(0, 0, w, h);
+      requestAnimationFrame(render);  // Continue rendering the animation
+      ctx.fillStyle = '#00000010';  // Fading effect for the background
+      ctx.fillRect(0, 0, w, h);  // Apply the background fading
       chars.forEach((pts, i) => firework(t, i, pts));  // Show fireworks for each letter in the word
     }
 
@@ -178,7 +155,6 @@
       ctx.fillStyle = `hsl(${id * 55}, 55%, 55%)`;
 
       // Explosion for each particle (letter's firework particles)
-      // Ensure horizontal alignment by keeping `x` constant, but vary `y` slightly
       pts.forEach((xy, i) => {
         if (i % 20 === 0)
           ctx.fillStyle = `hsl(${id * 55}, 55%, ${55 + t * Math.sin(t * 55 + i) * 45}%)`;
