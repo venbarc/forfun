@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy New Year Fireworks</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* Elegant heart-shaped button */
+    .heart-btn {
+      width: 100px;
+      height: 100px;
+      position: relative;
+      cursor: pointer;
+      background-color: #ff4d4d;
+      transform: rotate(-45deg);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease-in-out;
+    }
+    .heart-btn::before,
+    .heart-btn::after {
+      content: '';
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background-color: #ff4d4d;
+      border-radius: 50%;
+      transition: all 0.3s ease-in-out;
+    }
+    .heart-btn::before {
+      top: -50px;
+      left: 0;
+    }
+    .heart-btn::after {
+      top: 0;
+      left: 50px;
+    }
+    /* Hover effects */
+    .heart-btn:hover {
+      transform: scale(1.1) rotate(-45deg);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+    .heart-btn:hover::before,
+    .heart-btn:hover::after {
+      background-color: #ff1a1a;
+    }
+  </style>
+</head>
+<body>
+  <div class="heart-btn" onclick="triggerFireworks()"></div> <!-- Heart-shaped button -->
+
+  <script>
+    let chars, particles, canvas, ctx, w, h, current;
+    let duration = 4000; // Duration to display each word
+    let str = ['HAPPY', 'NEW', 'YEAR', 'FROM', 'OBRE', 'FAM', 'TO', 'YOURS', 'YEAR', '2025', '<3'];
+
+    // Sound effects
+    const rocketSound = new Audio('roceket.mp3'); // Rocket sound
+    rocketSound.loop = true; // Loop the rocket sound
+
+    const explosionSound = new Audio('fireworks.mp3'); // Explosion sound
+    explosionSound.loop = true; // Loop the explosion sound
+
+    const bgMusic = new Audio('bgMusic.mp3'); 
+    // Removed loop = true to make the background music play once
+
+    function triggerFireworks() {
+      // Play background music only when user clicks the button
+      bgMusic.play().catch(err => console.log("Background music playback failed:", err)); // Play the background music once
+      
+      init();
+      resize();
+      requestAnimationFrame(render);
+      addEventListener('resize', resize);
+
+      // Play rocket sound only if it's not already playing
+      if (rocketSound.paused) {
+        rocketSound.play().catch(err => console.log("Rocket sound playback failed:", err));
+      }
+
+      // Play explosion sound after 1 second if it's not already playing
+      setTimeout(() => {
+        if (explosionSound.paused) {
+          explosionSound.play().catch(err => console.log("Explosion sound playback failed:", err));
+        }
+      }, 1000); // Play explosion sound after 1 second
+    }
+
+    function makeChar(c) {
+      let tmp = document.createElement('canvas');
+      let size = tmp.width = tmp.height = w < 400 ? 200 : 300;
+      let tmpCtx = tmp.getContext('2d');
+      tmpCtx.font = 'bold ' + size + 'px Arial';
+      tmpCtx.fillStyle = 'white';
+      tmpCtx.textBaseline = "middle";
+      tmpCtx.textAlign = "center";
+      tmpCtx.fillText(c, size / 2, size / 2);
+      let char2 = tmpCtx.getImageData(0, 0, size, size);
+      let char2particles = [];
+      for (let i = 0; char2particles.length < particles; i++) {
+        let x = size * Math.random();
+        let y = size * Math.random();
+        let offset = parseInt(y) * size * 4 + parseInt(x) * 4;
+        if (char2.data[offset])
+          char2particles.push([x - size / 2, y - size / 2]);
+      }
+      return char2particles;
+    }
+
+    function init() {
+      canvas = document.createElement('canvas');
+      document.body.append(canvas);
+      ctx = canvas.getContext('2d');
+    }
+
+    function resize() {
+      w = canvas.width = innerWidth;
+      h = canvas.height = innerHeight;
+      particles = innerWidth < 400 ? 55 : 99;
+    }
+
+    function makeChars(t) {
+      let actual = Math.floor(t / duration) % str.length;  // Get the current word based on time
+      if (current === actual) return;
+      current = actual;
+
+      // Create particles (characters) for the current word
+      chars = [...str[actual]].map(makeChar);  // Now all characters of the word are created together
+    }
+
+    function render(t) {
+      makeChars(t);  // Update the characters for the current word
+      requestAnimationFrame(render);
+      ctx.fillStyle = '#00000010';
+      ctx.fillRect(0, 0, w, h);
+      chars.forEach((pts, i) => firework(t, i, pts));  // Show fireworks for each letter in the word
+    }
+
+    function firework(t, i, pts) {
+      let id = i + chars.length * Math.floor(t / duration);  // Unique ID for each letter's firework
+      let t_normalized = (t % duration) / duration;  // Normalize time between 0 and 1 for each word's duration
+
+      let dx = (i + 1) * w / (chars.length + 1);  // Spread out letters horizontally across the canvas
+      let dy = h * 0.5 + Math.sin(id * 4547.411) * h * 0.1;  // Keep vertically centered but add some randomness
+
+      // Trigger the fireworks (show rocket and explosion phases for all letters at once)
+      if (t_normalized < 0.33) {
+        rocket(dx, dy, id, t_normalized * 3);  // Rocket phase for all letters in the word
+      } else {
+        explosion(pts, dx, dy, id, Math.min(1, Math.max(0, t_normalized - 0.33) * 2));  // Explosion phase for all letters
+      }
+    }
+
+    function rocket(x, y, id, t) {
+      ctx.fillStyle = 'white';
+      let r = 2 - 2 * t + Math.pow(t, 15 * t) * 16;
+      y = h - y * t;
+      circle(x, y, r);
+    }
+
+    function explosion(pts, x, y, id, t) {
+      let dy = (t * t * t) * 20;  // Y movement during explosion phase
+      let r = Math.sin(id) * 1 + 3;  // Radius of explosion effect
+      r = t < 0.5 ? (t + 0.5) * t * r : r - t * r;  // Change the radius dynamically
+      ctx.fillStyle = `hsl(${id * 55}, 55%, 55%)`;
+
+      // Explosion for each particle (letter's firework particles)
+      // Ensure horizontal alignment by keeping `x` constant, but vary `y` slightly
+      pts.forEach((xy, i) => {
+        if (i % 20 === 0)
+          ctx.fillStyle = `hsl(${id * 55}, 55%, ${55 + t * Math.sin(t * 55 + i) * 45}%)`;
+        // Adjust `x` for horizontal alignment of particles and allow slight vertical randomness
+        let offsetY = Math.random() * 10 - 5;  // Vertical offset for slight randomness (-5 to +5)
+        circle(t * xy[0] + x, h - y + t * xy[1] + dy + offsetY, r);  // Adjust for slight vertical spread
+      });
+    }
+
+    function circle(x, y, r) {
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, r, 0, 0, 6.283);
+      ctx.fill();
+    }
+  </script>
+</body>
+</html>
